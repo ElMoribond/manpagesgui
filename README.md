@@ -10,4 +10,4 @@ Currently the following languages are available:
 
 Installation
 ------------
-Archlinux: yaourt -Sy manpagesgui
+Archlinux: yaourt -S manpagesgui
