@@ -7,3 +7,7 @@ The translation file contains 36 words or clauses.
 Currently the following languages are available:
 - English
 - French
+
+Installation
+------------
+Archlinux: yaourt -Sy manpagesgui
