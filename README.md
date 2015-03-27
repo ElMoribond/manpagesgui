@@ -1,6 +1,6 @@
 Translation
 -----------
-If you want to translate manpagesgui and so fit your language you can send a message to elmoribond@gmail.com.
+If you want to translate manpagesgui and so fit your language send me a message.
 
 The translation file contains 36 words or clauses.
 
