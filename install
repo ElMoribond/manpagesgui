@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root"
+   exit 1
+fi
+
+echo "Copying files"
+for I in share/manpagesgui share/man bin share/applications
+do
+  mkdir -p "/usr/$I"
+done
+for I in LICENSE README.md __init__.py manpagesgui.py i18n png uninstall
+do
+  cp -rf $I /usr/share/manpagesgui/
+done
+cp -rf man/* $pkgdir/usr/share/man/
+cp -f extra/manpagesgui.desktop /usr/share/applications/
+
+echo "Create shortcut"
+chmod +x /usr/share/manpagesgui/uninstall
+chmod +x /usr/share/manpagesgui/manpagesgui.py
+ln -sf /usr/share/manpagesgui/manpagesgui.py /usr/bin/manpagesgui
+
+echo "Rebuild man database"
+mandb -q
+
+if [ ${LANG:0:2} != "" ] && [ ${LANG:0:2} != "en" ] && [ ${LANG:0:2} != "fr" ]; then
+  echo
+  echo "This program is not yet translated to your language (${LANG:0:2})."
+  echo "If you wish, you can change that (https://github.com/ElMoribond/manpagesgui/blob/master/README.md)."
+fi
+
+echo
+echo "Uninstallable with 'sudo /usr/share/manpagesgui/uninstall'"
+echo
+echo "Installation Complete"

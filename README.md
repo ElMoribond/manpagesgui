@@ -1,13 +1,29 @@
+Description
+-----------
+manpagesgui is a GUI manual pagers based on Qt5.4.
+It allows you to simply navigate among Linux manual pages by clicking on links.
+It also offers the different sections of the same page so you do not miss anything when you are looking for information.
+
+Install
+-------
+On Archlinux
+- yaourt -S manpagesgui
+
+From Zip file
+- sudo ./install
+
 Translation
 -----------
-If you want to translate manpagesgui and so fit your language send me a message.
-
-The translation file contains 36 words or clauses.
+If you want to translate manpagesgui you can post a message on <>.
+The translation file contains only 43 words or clauses.
 
 Currently the following languages are available:
 - English
 - French
 
-Installation
+Dependencies
 ------------
-Archlinux: yaourt -S manpagesgui
+- python 3.4
+- pyqt5-common 5.4
+- man-db 2.7
+- man-pages 2.7

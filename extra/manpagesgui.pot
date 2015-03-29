@@ -1,0 +1,192 @@
+# manpagesgui translate model.
+# Copyright (C) 2015 ElMoribond
+# This file is distributed under the same license as the manpagesgui software.
+# ElMoribond <elmoribond@gmail.com>, 2015.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: manpagesgui 1.1\n"
+"Report-Msgid-Bugs-To: <elmoribond@gmail.com>\n"
+"POT-Creation-Date: 2015-03-28 14:46+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: ElMoribond <elmoribond@gmail.com>\n"
+"Language-Team: ElMoribond <elmoribond@gmail.com>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: manpagesgui.py:60
+msgid "Random Page"
+msgstr ""
+
+#: manpagesgui.py:76
+msgid "About"
+msgstr ""
+
+#: manpagesgui.py:80
+msgid "Lost in French countryside but reachable"
+msgstr ""
+
+#: manpagesgui.py:88
+msgid "released on"
+msgstr ""
+
+#: manpagesgui.py:89
+msgid "Created by"
+msgstr ""
+
+#: manpagesgui.py:91
+msgid "Released under GNU GPLv3 license"
+msgstr ""
+
+#: manpagesgui.py:93
+msgid "All rights reserved"
+msgstr ""
+
+#: manpagesgui.py:93
+msgid "This program comes with ABSOLUTELY NO WARRANTY"
+msgstr ""
+
+#: manpagesgui.py:93
+msgid ""
+"This is free software, and you are welcome to redistribute it under certain "
+"conditions"
+msgstr ""
+
+#: manpagesgui.py:267
+msgid "An error occurred"
+msgstr ""
+
+#: manpagesgui.py:271
+msgid "Not Found"
+msgstr ""
+
+#: manpagesgui.py:425
+msgid "is not valid argument"
+msgstr ""
+
+#: manpagesgui.py:428
+msgid "directory not found"
+msgstr ""
+
+#: manpagesgui.py:431
+msgid "command not found"
+msgstr ""
+
+#: manpagesgui.py:449
+msgid "number"
+msgstr ""
+
+#: manpagesgui.py:449
+msgid "color"
+msgstr ""
+
+#: manpagesgui.py:449
+msgid "default"
+msgstr ""
+
+#: manpagesgui.py:450
+msgid "GUI manual pager"
+msgstr ""
+
+#: manpagesgui.py:451
+msgid "man command"
+msgstr ""
+
+#: manpagesgui.py:451
+msgid "command"
+msgstr ""
+
+#: manpagesgui.py:452
+msgid "manual pages directory"
+msgstr ""
+
+#: manpagesgui.py:452
+msgid "directory"
+msgstr ""
+
+#: manpagesgui.py:453
+msgid "Do not display pages in local language"
+msgstr ""
+
+#: manpagesgui.py:454
+msgid "Disables other proposals pages"
+msgstr ""
+
+#: manpagesgui.py:455
+msgid "Number of random pages displayed"
+msgstr ""
+
+#: manpagesgui.py:456
+msgid "Number of columns displayed"
+msgstr ""
+
+#: manpagesgui.py:457
+msgid "Number of rows displayed"
+msgstr ""
+
+#: manpagesgui.py:458
+msgid "Disables email links"
+msgstr ""
+
+#: manpagesgui.py:459
+msgid "Disables URL links"
+msgstr ""
+
+#: manpagesgui.py:460
+msgid "Use theme's colors"
+msgstr ""
+
+#: manpagesgui.py:461
+msgid "Text color"
+msgstr ""
+
+#: manpagesgui.py:462
+msgid "Background color"
+msgstr ""
+
+#: manpagesgui.py:463
+msgid "Section text color"
+msgstr ""
+
+#: manpagesgui.py:464
+msgid "Section background color"
+msgstr ""
+
+#: manpagesgui.py:465
+msgid "Link text color"
+msgstr ""
+
+#: manpagesgui.py:466
+msgid "Link background color"
+msgstr ""
+
+#: manpagesgui.py:467
+msgid "Bold text color"
+msgstr ""
+
+#: manpagesgui.py:468
+msgid "Bold background color"
+msgstr ""
+
+#: manpagesgui.py:469
+msgid "Italic text color"
+msgstr ""
+
+#: manpagesgui.py:470
+msgid "Italic background color"
+msgstr ""
+
+#: manpagesgui.py:471
+msgid "Environment variable text color"
+msgstr ""
+
+#: manpagesgui.py:472
+msgid "Environment variable background color"
+msgstr ""
+
+#: manpagesgui.py:473
+msgid "Display version number and exit"
+msgstr ""

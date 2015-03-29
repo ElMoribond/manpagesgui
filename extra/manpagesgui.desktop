@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Manuel pages
+Name[fr]=Pages du manuel
+Comment=Navigate through the Linux manual pages
+Comment[fr]=Naviguer dans les pages du manuel Linux
+Exec=/usr/bin/manpagesgui
+Icon=/usr/share/manpagesgui/png/manpagesgui.png
+Categories=GNOME;System;
