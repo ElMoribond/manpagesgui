@@ -1,7 +1,7 @@
 #!/bin/env python3
 # -*- coding: utf-8 -*-
 
-# manpagesgui - GUI manual pager
+# manpagesgui v1.2 - GUI manual pager
 # Copyright © 2015 ElMoribond (Michael Herpin)
 #
 # This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from functools import partial
 from gettext import bindtextdomain, gettext, textdomain
 from glob import glob
-from os import path, sep
+from os import access, F_OK, path, sep, W_OK
 from random import randrange
 from re import compile, DOTALL, findall, IGNORECASE, match, MULTILINE, sub
 from shutil import which
@@ -29,18 +29,55 @@ from subprocess import DEVNULL, PIPE, Popen
 from textwrap import dedent
 from PyQt5.QtCore import QBuffer, QByteArray, QSettings, Qt, QUrl
 from PyQt5.QtGui import QCursor, QDesktopServices, QIcon, QPixmap
-from PyQt5.QtWidgets import QAction, QApplication, QComboBox, QDialog, QGridLayout, QHBoxLayout, QLabel, QLayout, QLineEdit, QMessageBox, QPushButton, QStyle, QTextBrowser, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QAbstractItemView, QAction, QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QGroupBox, QGridLayout, QHBoxLayout, QLabel, QLayout, QLineEdit, QMenu, QRadioButton, QMessageBox, QPushButton, QStyle, QTableWidget, QTableWidgetItem, QTextBrowser, QVBoxLayout, QWidget
 from PyQt5.QtWebKitWidgets import QWebPage, QWebView
+try:
+    from lxml import etree as ET
+except:
+    LXML= False
+else:
+    LXML= True
 
 PROJECT_NAME= "manPagesGui"
-PROJECT_VERSION= "1.1"
-PROJECT_RELEASE_DATE= "2015-03-28"
+PROJECT_VERSION= "1.2"
+PROJECT_RELEASE_DATE= "2015-04-05"
 PROJECT_TEAM= "ElMoribond"
 PROJECT_EMAIL= "elmoribond@gmail.com"
-PROJECT_URL="https://github.com/ElMoribond/manpagesgui"
+PROJECT_URL= "https://github.com/ElMoribond/manpagesgui"
 
 bindtextdomain(PROJECT_NAME.lower(), "i18n")
 textdomain(PROJECT_NAME.lower())
+
+class MDialog(QDialog):
+
+    def __init__(self, title):
+        super().__init__(ManPagesGUI.self)
+        self.setWindowTitle(title)
+        self.rejected.connect(self.close)
+
+    def exec_(self):
+        ManPagesGUI.self.buttonExtra.setFocus()
+        super().open()
+
+    def closeEvent(self, event):
+        ManPagesGUI.self.command.setFocus()
+        super().closeEvent(event)
+
+class Dialog(MDialog):
+
+    def __init__(self, title):
+        super().__init__(title)
+        buttons= QWidget()
+        self.layoutButton= QHBoxLayout(buttons)
+        self.layoutButton.addStretch(1)
+        self.buttonCancel= QPushButton(gettext("Cancel"))
+        self.buttonCancel.clicked.connect(self.close)
+        self.buttonValidate= QPushButton(gettext("OK"))
+        self.layoutButton.addWidget(self.buttonCancel)
+        self.layoutButton.addWidget(self.buttonValidate)
+        self.layout= QVBoxLayout(self)
+        self.layout.addWidget(buttons)
+        self.layout.setSizeConstraint(QLayout.SetFixedSize)
 
 class MLabel(QLabel):
 
@@ -53,27 +90,24 @@ class MLabel(QLabel):
         super().leaveEvent(event)
 
 class ManPagesGUI(QDialog):
-    DEFAULTSECTION, ALLSECTIONS, CONTENTSECTION, POPEN= range(0, 4)
-    pagesError, pages= list(), list()
-    manScheme, rawScheme= "manpage", "raw"
-    manpagesHover= False
-    randomPage= gettext("Random Page")
+    POPEN, DEFAULTSECTION, ALLSECTIONS, CONTENTSECTION, FINDSHORT, FINDFULL, FINDREGEX= range(0, 7)
+    OpenBox, resultDialog, manpagesHover, pagesError, pages, manScheme, rawScheme= 0, None, False, list(), list(), "manpage", "raw"
+    randomPage, errorOccurred, notFound= gettext("Random Page"), gettext("An error occurred"), gettext("Not Found")
 
-    class AboutDialog(QDialog):
+    class AboutDialog(MDialog):
 
         class Label(MLabel):
 
             def __init__(self):
                 super().__init__()
-                self.setPixmap(QPixmap(path.join(path.dirname(path.realpath(__file__)), path.join("png", "gplv3-127x51.png"))))
+                self.setPixmap(QPixmap(path.join(path.dirname(path.realpath(__file__)), "png", "gplv3-127x51.png")))
 
             def mousePressEvent(self, event):
                 if event.button() == Qt.LeftButton:
                     QDesktopServices.openUrl(QUrl("http://www.gnu.org/licenses/quick-guide-gplv3.html"))
 
         def __init__(self):
-            super().__init__(ManPagesGUI.self)
-            self.setWindowTitle("%s %s" % (gettext("About"), PROJECT_NAME))
+            super().__init__("%s %s" % (ManPagesGUI.self.about, PROJECT_NAME))
             sty= "" if namespace.theme_color else "style='color: %s'" % namespace.link_color
             logo= QLabel()
             logo.setPixmap(ManPagesGUI.logo)
@@ -111,22 +145,25 @@ class ManPagesGUI(QDialog):
             self.customContextMenuRequested.connect(self.openContextMenu)
             self.info= self.Label(self)
 
-        def openContextMenu(self, point):
-            contextMenu= self.createStandardContextMenu()
-            contextMenu.addSeparator()
-            contextMenu.addAction(QAction(ManPagesGUI.randomPage, self, triggered= partial(ManPagesGUI.self.manpages.openPage, None, 1)))
-            contextMenu.exec_(self.mapToGlobal(point))
-
         def focusOutEvent(self, event):
-            self.setFocus(True)
+            if ManPagesGUI.self.buttonExtra.hasFocus():
+                super().focusOutEvent(event)
+            else:
+                self.setFocus()
+
+        def resizeEvent(self, event):
+            self.ensurePolished()
+            self.info.setGeometry(self.rect().right() - self.minimumSizeHint().height(), (self.rect().height() - self.minimumSizeHint().height()) / 2, self.minimumSizeHint().height(), self.minimumSizeHint().height())
 
         def keyPressEvent(self, event):
             if not ManPagesGUI.manpagesHover or not ManPagesGUI.self.manpages.pressedKey(event):
                 super().keyPressEvent(event)
 
-        def resizeEvent(self, event):
-            self.ensurePolished()
-            self.info.setGeometry(self.rect().right() - self.minimumSizeHint().height(), (self.rect().height() - self.minimumSizeHint().height()) / 2, self.minimumSizeHint().height(), self.minimumSizeHint().height())
+        def openContextMenu(self, point):
+            contextMenu= self.createStandardContextMenu()
+            contextMenu.addSeparator()
+            contextMenu.addAction(QAction(ManPagesGUI.randomPage, self, triggered= partial(ManPagesGUI.self.manpages.openPage, None, 1)))
+            contextMenu.exec_(self.mapToGlobal(point))
 
     class ManPageZone(QWebView):
 
@@ -143,8 +180,7 @@ class ManPagesGUI(QDialog):
                 ManPagesGUI.self.pagesOther.currentIndexChanged[int].connect(partial(self.openPage, -3))
             ManPagesGUI.self.buttonPrevious.clicked.connect(partial(self.openPage, False))
             ManPagesGUI.self.buttonNext.clicked.connect(partial(self.openPage, True))
-            ba= QByteArray()
-            img= self.style().standardIcon(QStyle.SP_MessageBoxWarning)
+            ba, img= QByteArray(), self.style().standardIcon(QStyle.SP_MessageBoxWarning)
             img.pixmap(48, 48, QIcon.Normal, QIcon.On).save(QBuffer(ba), "PNG")
             self.css= "%s%s" % ("" if namespace.theme_color else """
                 body { color: """ + namespace.color + """; background-color: """ + namespace.background + """ }
@@ -201,15 +237,15 @@ class ManPagesGUI(QDialog):
 
         def openPage(self, page, option= True):
             QApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
-            if page == None:
+            if page is None:
                 page= 0
                 if not len(ManPagesGUI.pages):
                     if namespace.man_directory:
                         dir= namespace.man_directory
                     else:
                         dir= self.man("manpath", ManPagesGUI.POPEN)
-                        dir= dir[1].rstrip() if dir[0] == 0 else path.join(sep, path.join("usr", path.join("share", "man")))
-                    for fn in glob(path.join(dir, path.join("man?", "*.gz"))):
+                        dir= dir[1].rstrip() if dir[0] == 0 else path.join(sep, "usr", "share", "man")
+                    for fn in glob(path.join(dir, "man?", "*.gz")):
                         ManPagesGUI.pages.append(sub(r"(.+)\.([^.]+)\.gz", r"\2 \1", path.basename(fn)))
                 while page < option:
                     x= randrange(0, len(ManPagesGUI.pages) - 1)
@@ -264,35 +300,47 @@ class ManPagesGUI(QDialog):
                 else:
                     QDesktopServices.openUrl(QUrl(page.toString().replace("−", "-")))
             else:
-                errorOccurred= "%s: %s" % (page, gettext("An error occurred"))
                 default= self.man(parsePages(page)[0], ManPagesGUI.DEFAULTSECTION)
                 if type(default[0]) != type(str()):
                     if default[0] == -1:
-                        self.addError("%s: %s" % (parsePages(page)[0], gettext("Not Found")), option)
+                        self.addError("%s: %s" % (parsePages(page)[0], ManPagesGUI.notFound), option)
                     else:
-                        self.addError(errorOccurred, option)
+                        self.addError("%s: %s" % (page, ManPagesGUI.errorOccurred), option)
                 else:
                     if ManPagesGUI.self.pagesList.findText(default[0], Qt.MatchFixedString) > -1:
                         if option:
                             self.openPage(ManPagesGUI.self.pagesList.findText(default[0], Qt.MatchFixedString), option)
                     else:
-                        sections= self.man(parsePages(page)[0], ManPagesGUI.ALLSECTIONS)
-                        source= self.man(parsePages(page)[0], ManPagesGUI.CONTENTSECTION)
+                        sections, source= self.man(parsePages(page)[0], ManPagesGUI.ALLSECTIONS), self.man(parsePages(page)[0], ManPagesGUI.CONTENTSECTION)
                         if type(source[0]) == type(sections[0]) == type(str()):
                             ManPagesGUI.self.pagesList.currentIndexChanged[int].disconnect()
                             ManPagesGUI.self.pagesList.addItem(default[0], [ source, sections ])
                             ManPagesGUI.self.pagesList.currentIndexChanged[int].connect(partial(self.openPage, -2))
                             self.openPage(ManPagesGUI.self.pagesList.count() - 1, option)
                         else:
-                            self.addError(errorOccurred, option)
+                            self.addError("%s: %s" % (page, ManPagesGUI.errorOccurred), option)
             QApplication.restoreOverrideCursor()
 
-        def man(self, page, option, ):
+        def man(self, page, option, Tout= 20):
             cmd= "%s -D%s%s" % (namespace.man_command, " -M%s" % namespace.man_directory if namespace.man_directory else "", " -Len" if namespace.no_locale else "")
-            if option == ManPagesGUI.DEFAULTSECTION:
+            if option in [ ManPagesGUI.DEFAULTSECTION, ManPagesGUI.FINDFULL, ManPagesGUI.FINDREGEX|ManPagesGUI.FINDFULL ]:
+                fnToP, fnToPr= r"^[\S]+/(\S+)\.(\S+)\.gz$", r"\1(\2)"
+            if option == ManPagesGUI.POPEN:
+                try:
+                    proc= Popen(page, stdout= PIPE, stderr= DEVNULL, universal_newlines= True, bufsize= 1, shell= True)
+                except:
+                    pass
+                else:
+                    try:
+                        source= proc.communicate(timeout= Tout)[0]
+                    except:
+                        pass
+                    else:
+                        return [ proc.returncode, source ]
+            elif option == ManPagesGUI.DEFAULTSECTION:
                 source= self.man("%s -w %s" % (cmd, page), ManPagesGUI.POPEN)
                 if source[0] == 0:
-                    return sub(r"^[\S]+/(\S+)\.(\S+)\.gz$", r"\1(\2)", source[1]).splitlines()
+                    return sub(fnToP, fnToPr, source[1]).splitlines()
                 elif source[0] == 16:
                     return [ -1 ]
             elif option == ManPagesGUI.ALLSECTIONS:
@@ -320,18 +368,19 @@ class ManPagesGUI(QDialog):
                     if not namespace.no_email_link:
                         source[1]= sub(compile(r"([_A-Z0-9.+-]+@[_A-Z0-9-]+\.[A-Z0-9-.]+)", DOTALL|IGNORECASE), r"<a href='mailto://\1'>\1</a>", source[1])
                     return [ source[1].replace("<hr>", "").replace("\n\n\n", "\n").replace("\n\n", "\n"), s ]
-            else:
-                try:
-                    proc= Popen(page, stdout= PIPE, stderr= DEVNULL, universal_newlines= True, bufsize= 1, shell= True)
-                except:
-                    pass
-                else:
-                    try:
-                        source= proc.communicate(timeout= 10)[0]
-                    except:
-                        pass
+            elif option in [ ManPagesGUI.FINDSHORT, ManPagesGUI.FINDFULL, ManPagesGUI.FINDREGEX|ManPagesGUI.FINDSHORT, ManPagesGUI.FINDREGEX|ManPagesGUI.FINDFULL ]:
+                addOption, Tout= [ "k", 25 ] if option in [ ManPagesGUI.FINDSHORT, ManPagesGUI.FINDREGEX|ManPagesGUI.FINDSHORT ] else [ "K -w", 60 * 2 ]
+                if option in [ ManPagesGUI.FINDREGEX|ManPagesGUI.FINDSHORT, ManPagesGUI.FINDREGEX|ManPagesGUI.FINDFULL ]:
+                    addOption, Tout= "%s --regex" % addOption, Tout * 2
+                source= self.man("%s -%s \"%s\"" % (cmd, addOption, page), ManPagesGUI.POPEN, Tout)
+                if source[0] == 0:
+                    if option in [ ManPagesGUI.FINDSHORT, ManPagesGUI.FINDREGEX|ManPagesGUI.FINDSHORT ]:
+                        return source[1].splitlines()
                     else:
-                        return [ proc.returncode, source ]
+                        return sub(compile(fnToP, MULTILINE|DOTALL), fnToPr, source[1]).splitlines()
+                    return [ source[1] ]
+                elif source[0] == 16:
+                    return [ -1 ]
             return [ -2 ]
 
         def addError(self, error, option):
@@ -363,13 +412,256 @@ class ManPagesGUI(QDialog):
         def applyStyle(self, html):
             return sub(r"(<style type=\"text/css\">)(</style>)", r"\1%s\2" % dedent(self.css), html)
 
+    class TextSearchDialog(Dialog):
+
+        class ResultDialog(Dialog):
+
+            class TableWidget(QTableWidget):
+
+                def __init__(self):
+                    super().__init__()
+
+                def mouseDoubleClickEvent(self, event):
+                    pass
+
+            def __init__(self, title, source, header, w= 0):
+                super().__init__(title)
+                self.setContextMenuPolicy(Qt.CustomContextMenu)
+                self.customContextMenuRequested.connect(self.openContextMenu)
+                self.buttonValidate.clicked.connect(self.openpages)
+                self.table= self.TableWidget()
+                self.table.setRowCount(len(source))
+                self.table.setColumnCount(len(header))
+                self.table.setHorizontalHeaderLabels(header)
+                self.table.setSortingEnabled(True)
+                self.table.sortByColumn(0, Qt.AscendingOrder)
+                self.table.verticalHeader().setVisible(False)
+                self.table.setSelectionMode(QAbstractItemView.MultiSelection)
+                self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+                self.table.selectionModel().selectionChanged.connect(self.actualizeButton)
+                if len(header) > 1:
+                    for i, item in enumerate(source):
+                        self.table.setItem(i, 0, QTableWidgetItem(item[0].replace(" (", "(")))
+                        self.table.setItem(i, 1, QTableWidgetItem(item[1]))
+                else:
+                    for i, item in enumerate(source):
+                        self.table.setItem(i, 0, QTableWidgetItem(item))
+                self.table.resizeColumnsToContents()
+                self.table.resizeRowsToContents()
+                for i in range(len(header)):
+                    w+= self.table.columnWidth(i)
+                self.table.setMinimumWidth(w)
+                self.actualizeButton()
+                self.layout.insertWidget(0, self.table)
+
+            def actualizeButton(self):
+                self.buttonValidate.setEnabled(True if len(self.table.selectionModel().selectedRows()) else False)
+
+            def openContextMenu(self, point):
+                contextMenu= QMenu()
+                contextMenu.addAction(QAction(gettext("Select All"), self, triggered= self.table.selectAll))
+                contextMenu.addAction(QAction(gettext("Unselect All"), self, triggered= self.table.clearSelection))
+                contextMenu.exec_(self.mapToGlobal(point))
+
+            def openpages(self):
+                for item in self.table.selectionModel().selectedRows():
+                    ManPagesGUI.self.manpages.openPage(self.table.item(item.row(), 0).text(), False)
+
+        def __init__(self):
+            super().__init__(ManPagesGUI.self.textSearch)
+            self.edit= QLineEdit(self)
+            self.edit.setMaxLength(64)
+            self.name= gettext("Name's page")
+            self.description= gettext("Description")
+            self.content= gettext("Content page")
+            self.searchIn= gettext("Search in")
+            self.regexString= gettext("Regex string")
+            radioButtons= QButtonGroup(self)
+            self.r0= QRadioButton(self.name)
+            radioButtons.addButton(self.r0)
+            self.r0.setChecked(True)
+            self.r1= QRadioButton(self.description)
+            radioButtons.addButton(self.r1)
+            self.r2= QRadioButton(self.content)
+            radioButtons.addButton(self.r2)
+            zButtons= QGroupBox(self.searchIn)
+            zButtons.setStyleSheet("QGroupBox { border: 1px solid gray; margin-top: 0.5em; } QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 3px 0 3px; }")
+            layoutButtons= QHBoxLayout(zButtons)
+            layoutButtons.addWidget(self.r0)
+            layoutButtons.addWidget(self.r1)
+            layoutButtons.addWidget(self.r2)
+            self.regex= QCheckBox(self.regexString)
+            self.edit.returnPressed.connect(self.buttonValidate.click)
+            self.buttonValidate.clicked.connect(self.launchSearch)
+            self.layout.insertWidget(0, self.edit)
+            self.layout.insertWidget(1, self.regex)
+            self.layout.insertWidget(2, zButtons)
+            self.edit.setFocus()
+
+        def launchSearch(self):
+            QApplication.setOverrideCursor(QCursor(Qt.BusyCursor))
+            source= ManPagesGUI.self.manpages.man(self.edit.text(), ManPagesGUI.FINDREGEX if self.regex.isChecked() else 0 | ManPagesGUI.FINDSHORT if self.r0.isChecked() or self.r1.isChecked() else ManPagesGUI.FINDFULL)
+            QApplication.restoreOverrideCursor()
+            if type(source[0]) == type(str()):
+                if self.r2.isChecked():
+                    title= self.content
+                    source= list(set(source))
+                    header= [ self.name ]
+                else:
+                    fl= list()
+                    for line in source:
+                        line= sub(r"([\S ]+)\) +- ([\S ]+)", r"\1)#\2", line).split("#")
+                        if self.regex.isChecked() and findall(r"%s" % self.edit.text(), line[0 if self.r0.isChecked() else 1], IGNORECASE) or not self.regex.isChecked() and self.edit.text() in line[0 if self.r0.isChecked() else 1]:
+                            fl.append(line)
+                    title= self.name if self.r0.isChecked() else self.description
+                    source= fl
+                    header= [ self.name, self.description ]
+                if len(source):
+                    self.close()
+                    ManPagesGUI.resultDialog= self.ResultDialog("%s: %s(%d)" % (self.searchIn, title, len(source)), source, header)
+                    ManPagesGUI.resultDialog.show()
+                else:
+                    QMessageBox.critical(ManPagesGUI.self, "\0", ManPagesGUI.notFound, QMessageBox.Ok)
+            else:
+                QMessageBox.critical(ManPagesGUI.self, "\0", ManPagesGUI.notFound if source[0] == -1 else ManPagesGUI.errorOccurred, QMessageBox.Ok)
+
+    class KeyBindingDialog(Dialog):
+
+        class LineEdit(QLineEdit):
+
+            def __init__(self, dialog):
+                super().__init__()
+                self.dialog, self.key, self.keyF= dialog, range(Qt.Key_A, Qt.Key_Z), range(Qt.Key_F1, Qt.Key_F35)
+                self.controlMod, self.altMod, self.shiftMod= gettext("Control"), gettext("Alt"), gettext("Shift")
+
+            def keyPressEvent(self, event, text= ""):
+                if event.modifiers() == Qt.ControlModifier:
+                    text= "%s + " % self.controlMod
+                elif event.modifiers() == Qt.AltModifier:
+                    text= "%s + " % self.altMod
+                elif event.modifiers() == Qt.ShiftModifier:
+                    text= "%s + " % self.shiftMod
+                elif event.modifiers() == Qt.ControlModifier|Qt.AltModifier:
+                    text= "%s + %s + " % (self.controlMod, self.altMod)
+                elif event.modifiers() == Qt.ControlModifier|Qt.ShiftModifier:
+                    text= "%s + %s + " % (self.controlMod, self.shiftMod)
+                elif event.modifiers() == Qt.AltModifier|Qt.ShiftModifier:
+                    text= "%s + %s + " % (self.altMod, self.shiftMod)
+                elif event.modifiers() == Qt.ControlModifier|Qt.AltModifier|Qt.ShiftModifier:
+                    text= "%s + %s + %s + " % (self.controlMod, self.altMod, self.shiftMod)
+                if event.key() in self.keyF:
+                    text= "%sF%d" % (text, self.keyF.index(event.key() + 1))
+                elif event.key() == Qt.Key_Escape:
+                    self.dialog.close()
+                if len(text) and event.key() in self.key:
+                    text= "%s%s" % (text, chr(event.key()))
+                self.setText(text)
+
+            def setText(self, text):
+                if text is not None and not text.endswith("+ ") and not self.dialog.isKey(text) or text is None and self.dialog.getsetCommand() is not None:
+                    self.dialog.buttonValidate.setEnabled(True)
+                else:
+                    self.dialog.buttonValidate.setEnabled(False)
+                super().setText(text)
+
+        def __init__(self, options):
+            super().__init__(ManPagesGUI.self.keyBinding)
+            self.wm, self.file= options
+            self.edit, self.command= self.LineEdit(self), QLineEdit()
+            self.command.setMaxLength(48)
+            self.buttonValidate.clicked.connect(partial(self.getsetCommand, self.edit, None))
+            self.layout.insertWidget(0, QLabel("%s?\n%s.\n" % (gettext("What key combination you want to use"), gettext("Valid without keybinding for remove"))))
+            self.layout.insertWidget(1, self.edit)
+            self.layout.insertWidget(2, QLabel("%s:\n" % gettext("Command line options")))
+            self.layout.insertWidget(3, self.command)
+            self.edit.setFocus()
+
+        def exec_(self):
+            if self.wm == ManPagesGUI.OpenBox:
+                try:
+                    self.tree= ET.parse(self.file)
+                    self.string= sub(r"(\{\S+\})\S+", r"\1", self.tree.getroot().tag)
+                    self.keyboard= self.tree.getroot().find("%skeyboard" % self.string)
+                except:
+                    QMessageBox.critical(ManPagesGUI.self, "\0", "%s\n(%s)" % (gettext("Processing error"), self.file), QMessageBox.Ok)
+                else:
+                    if len(self.keyboard):
+                        self.edit.setText(self.getsetCommand())
+                    super().exec_()
+
+        def getsetCommand(self, key= None, current= None):
+            if self.wm == ManPagesGUI.OpenBox:
+                if key:
+                    key= key.text().replace("%s + " % self.edit.controlMod, "C-").replace("%s + " % self.edit.altMod, "A-").replace("%s + " % self.edit.shiftMod, "S-")
+                for c in self.keyboard:
+                    action= c.find("%saction" % self.string)
+                    if action is not None and len(action):
+                        for i in list(action):
+                            if i.text and match(r"^%scommand$" % self.string, i.tag) and path.basename(i.text.split()[0]) == PROJECT_NAME.lower():
+                                if key:
+                                    if len(key):
+                                        c.set("key", key)
+                                        i.text= "%s %s" % (PROJECT_NAME.lower(), self.command.text().strip())
+                                    current= c
+                                    break
+                                else:
+                                    self.command.setText(i.text.replace("%s " % PROJECT_NAME.lower(), ""))
+                                    return c.get("key").replace("C-", "%s + " % self.edit.controlMod).replace("A-", "%s + " % self.edit.altMod).replace("S-", "%s + " % self.edit.shiftMod)
+                if key:
+                    if current is not None:
+                        if not len(key):
+                            self.keyboard.remove(current)
+                    elif len(key):
+                        keybind= ET.Element('keybind')
+                        keybind.set("key", key)
+                        action= ET.SubElement(keybind, "action")
+                        action.set("name", "Execute")
+                        command= ET.SubElement(action, "command")
+                        command.text= "%s %s" % (PROJECT_NAME.lower(), self.command.text().strip())
+                        self.keyboard.append(keybind)
+                    else:
+                        return
+                    self.tree.write(self.file)
+                    ManPagesGUI.self.manpages.man("openbox --reconfigure", ManPagesGUI.POPEN)
+                    self.close()
+
+        def isKey(self, key):
+            if self.wm == ManPagesGUI.OpenBox:
+                key= key.replace("%s + " % self.edit.controlMod, "C-|").replace("%s + " % self.edit.altMod, "A-|").replace("%s + " % self.edit.shiftMod, "S-|").split("|")
+                for c in self.keyboard:
+                    if c.get("key"):
+                        if set(c.get("key").replace("C-", "C-|").replace("A-", "A-|").replace("S-", "S-|").split("|")) == set(key):
+                            return True
+            return False
+
+    class Menu(QMenu):
+
+        def __init__(self, parent):
+            super().__init__()
+            self.parent= parent
+            AkeyBinding, Aabout, AtextSearch= None, QAction(parent.about, self, triggered= self.parent.AboutDialog().exec_), QAction(parent.textSearch, self, triggered= self.parent.TextSearchDialog().exec_)
+            for i, fn in enumerate([ path.join(path.expanduser("~"), ".config", "openbox", "lxde-rc.xml") ]):
+                if access(fn, F_OK|W_OK):
+                    if i == ManPagesGUI.OpenBox and LXML:
+                        AkeyBinding= QAction(parent.keyBinding, self, triggered= self.parent.KeyBindingDialog([ i, fn ]).exec_)
+                    break
+            if AkeyBinding is None:
+                AkeyBinding= QAction(parent.keyBinding, self)
+                AkeyBinding.setEnabled(False)
+            self.addAction(Aabout)
+            self.addAction(AtextSearch)
+            self.addAction(AkeyBinding)
+
+        def closeEvent(self, event):
+            ManPagesGUI.self.command.setFocus()
+            super().closeEvent(event)
+
     def __init__(self):
         super().__init__()
-        ManPagesGUI.self= self
-        ManPagesGUI.logo= QPixmap(path.join(path.dirname(path.realpath(__file__)), path.join("png", "manpagesgui.png")))
-        self.rejected.connect(self.close)
+        ManPagesGUI.self, ManPagesGUI.logo= self, QPixmap(path.join(path.dirname(path.realpath(__file__)), "png", "%s.png" % PROJECT_NAME.lower()))
         self.setWindowIcon(QIcon(ManPagesGUI.logo))
         self.setWindowTitle(PROJECT_NAME)
+        self.rejected.connect(self.close)
         if QIcon.fromTheme("go-previous").isNull() or QIcon.fromTheme("go-next").isNull() or QIcon.fromTheme("application-exit").isNull():
             self.buttonPrevious= QPushButton(self.style().standardIcon(QStyle.SP_ArrowLeft), "")
             self.buttonNext= QPushButton(self.style().standardIcon(QStyle.SP_ArrowRight), "")
@@ -380,18 +672,20 @@ class ManPagesGUI(QDialog):
             buttonQuit= QPushButton(QIcon.fromTheme("application-exit"), "")
         self.buttonPrevious.setEnabled(False)
         self.buttonNext.setEnabled(False)
-        self.command= self.EditZone()
-        self.pagesList= QComboBox()
-        buttonAbout= QPushButton(QIcon(ManPagesGUI.logo), "")
-        buttonAbout.setIconSize(self.buttonNext.iconSize())
-        buttonAbout.clicked.connect(self.AboutDialog().exec_)
+        self.command, self.pagesList= self.EditZone(), QComboBox()
+        self.buttonExtra= QPushButton(QIcon(ManPagesGUI.logo), "")
+        self.buttonExtra.setIconSize(self.buttonNext.iconSize())
+        self.charactereSize= self.fontMetrics().boundingRect("X")
+        self.about, self.keyBinding, self.textSearch= gettext("About"), gettext("Keybinding"), gettext("Text search")
+        self.menu= self.Menu(self)
+        self.buttonExtra.setMenu(self.menu)
         box1= QWidget()
         layoutBox1= QHBoxLayout(box1)
         layoutBox1.addWidget(self.buttonPrevious)
         layoutBox1.addWidget(self.buttonNext)
         layoutBox1.addWidget(self.command)
         layoutBox1.addWidget(self.pagesList)
-        layoutBox1.addWidget(buttonAbout)
+        layoutBox1.addWidget(self.buttonExtra)
         layoutBox1.setContentsMargins(0, 0, 0, 0)
         layoutBox1.setStretchFactor(self.command, 1)
         layoutBox1.setStretchFactor(self.pagesList, 1)
@@ -404,21 +698,23 @@ class ManPagesGUI(QDialog):
         layoutBox2.addWidget(buttonQuit)
         layoutBox2.setContentsMargins(0, 0, 0, 0)
         self.manpages= self.ManPageZone()
-        charactereSize= self.fontMetrics().boundingRect("X")
-        self.manpages.setFixedSize(charactereSize.width() * int(namespace.cols), charactereSize.height() * int(namespace.rows))
+        self.manpages.setFixedSize(self.charactereSize.width() * int(namespace.cols), self.charactereSize.height() * int(namespace.rows))
         self.settings= QSettings(PROJECT_TEAM, PROJECT_NAME)
-        if self.settings.value("geometry", False):
-            self.restoreGeometry(self.settings.value("geometry"))
+        if self.settings.contains("position"):
+            self.move(self.settings.value("position"))
         layout= QVBoxLayout(self)
         layout.addWidget(box1)
         layout.addWidget(self.manpages)
         layout.addWidget(box2)
         layout.setSizeConstraint(QLayout.SetFixedSize)
-        for b in [ self.buttonPrevious, self.buttonNext, buttonAbout, buttonQuit ]:
+        for b in [ self.buttonPrevious, self.buttonNext, self.buttonExtra, buttonQuit ]:
             b.setAutoDefault(False)
 
     def closeEvent(self, event):
-        self.settings.setValue("geometry", self.saveGeometry())
+        if ManPagesGUI.resultDialog:
+            ManPagesGUI.resultDialog.close()
+        self.settings.setValue("position", self.pos())
+        self.settings.sync()
         app.quit()
 
 def invalidArgument(value, text= None):
@@ -484,8 +780,7 @@ def parsePages(extra):
 
 if __name__ == "__main__":
     namespace, extra= parsing()
-    app= QApplication(extra)
-    ui= ManPagesGUI()
+    app, ui= QApplication(extra), ManPagesGUI()
     if int(namespace.random_page):
         ui.manpages.openPage(None, int(namespace.random_page))
     ui.manpages.openPage(parsePages(extra), False)
