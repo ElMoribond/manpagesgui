@@ -5,9 +5,9 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: manpagesgui 1.2\n"
-"Report-Msgid-Bugs-To: <elmoribond@gmail.com>\n"
-"POT-Creation-Date: 2015-04-05 10:52+0200\n"
+"Project-Id-Version: manpagesgui 1.2.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2015-04-10 11:05+0200\n"
 "PO-Revision-Date: 2015-04-05 10:55+0200\n"
 "Last-Translator: ElMoribond <elmoribond@gmail.com>\n"
 "Language-Team: ElMoribond <elmoribond@gmail.com>\n"
@@ -17,55 +17,57 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: manpagesgui.py:73
+#: manpagesgui.py:71
 msgid "Cancel"
 msgstr "Annuler"
 
-#: manpagesgui.py:75
+#: manpagesgui.py:71
 msgid "OK"
 msgstr "Ok"
 
-#: manpagesgui.py:95
+#: manpagesgui.py:92
 msgid "Random Page"
 msgstr "Page au hasard"
 
-#: manpagesgui.py:95
+#: manpagesgui.py:92
 msgid "An error occurred"
 msgstr "Une erreur s'est produite"
 
-#: manpagesgui.py:95
+#: manpagesgui.py:92
 msgid "Not Found"
 msgstr "Non trouvé"
 
-#: manpagesgui.py:114
+#: manpagesgui.py:111
 msgid "Lost in French countryside but reachable"
 msgstr "Perdu dans la campagne française mais joignable"
 
-#: manpagesgui.py:122
+#: manpagesgui.py:117
 msgid "released on"
 msgstr "sortie le"
 
-#: manpagesgui.py:123
+#: manpagesgui.py:118
 msgid "Created by"
 msgstr "Crée par"
 
-#: manpagesgui.py:125
+#: manpagesgui.py:120
 msgid "Released under GNU GPLv3 license"
 msgstr "Sortie sous licence GNU GPLv3"
 
-#: manpagesgui.py:127
+#: manpagesgui.py:122
 msgid "All rights reserved"
 msgstr "Tous droits réservés"
 
-#: manpagesgui.py:127
+#: manpagesgui.py:122
 msgid "This program comes with ABSOLUTELY NO WARRANTY"
 msgstr "Ce programme est fourni SANS AUCUNE GARANTIE"
 
-#: manpagesgui.py:127
+#: manpagesgui.py:122
 msgid ""
 "This is free software, and you are welcome to redistribute it under certain "
 "conditions"
-msgstr "Il s'agit d'un logiciel libre, et vous êtes invité à le redistribuer sous certaines conditions"
+msgstr ""
+"Il s'agit d'un logiciel libre, et vous êtes invité à le redistribuer sous "
+"certaines conditions"
 
 #: manpagesgui.py:462
 msgid "Select All"
@@ -75,190 +77,194 @@ msgstr "Sélectionner Tous"
 msgid "Unselect All"
 msgstr "Désélectionner Tous"
 
-#: manpagesgui.py:474
+#: manpagesgui.py:473
 msgid "Name's page"
 msgstr "Nom de page"
 
-#: manpagesgui.py:475
+#: manpagesgui.py:473
 msgid "Description"
 msgstr "Description"
 
-#: manpagesgui.py:476
+#: manpagesgui.py:473
 msgid "Content page"
 msgstr "Contenu de la page"
 
-#: manpagesgui.py:477
+#: manpagesgui.py:473
 msgid "Search in"
 msgstr "Chercher dans"
 
-#: manpagesgui.py:478
+#: manpagesgui.py:473
 msgid "Regex string"
 msgstr "Chaine regex"
 
-#: manpagesgui.py:535
+#: manpagesgui.py:518
 msgid "Control"
 msgstr "Control"
 
-#: manpagesgui.py:535
+#: manpagesgui.py:518
 msgid "Alt"
 msgstr "Alt"
 
-#: manpagesgui.py:535
+#: manpagesgui.py:518
 msgid "Shift"
 msgstr "Shift"
 
-#: manpagesgui.py:573
+#: manpagesgui.py:555
 msgid "What key combination you want to use"
 msgstr "Quelle combinaison de touches voulez vous utiliser"
 
-#: manpagesgui.py:573
+#: manpagesgui.py:555
 msgid "Valid without keybinding for remove"
 msgstr "Valider sans raccourci pour supprimer"
 
-#: manpagesgui.py:575
+#: manpagesgui.py:557
 msgid "Command line options"
 msgstr "Options de la ligne de commande"
 
-#: manpagesgui.py:586
+#: manpagesgui.py:568
 msgid "Processing error"
 msgstr "Erreur de traitement"
 
-#: manpagesgui.py:679
+#: manpagesgui.py:657
 msgid "About"
 msgstr "A Propos"
 
-#: manpagesgui.py:679
+#: manpagesgui.py:657
 msgid "Keybinding"
 msgstr "Raccourci clavier"
 
-#: manpagesgui.py:679
+#: manpagesgui.py:657
 msgid "Text search"
 msgstr "Recherche de texte"
 
-#: manpagesgui.py:721
+#: manpagesgui.py:696
 msgid "is not valid argument"
 msgstr "n'est pas un argument valable"
 
-#: manpagesgui.py:724
+#: manpagesgui.py:699
 msgid "directory not found"
 msgstr "répertoire introuvable"
 
-#: manpagesgui.py:727
+#: manpagesgui.py:702
 msgid "command not found"
 msgstr "commande introuvable"
 
-#: manpagesgui.py:745
+#: manpagesgui.py:720
 msgid "number"
 msgstr "nombre"
 
-#: manpagesgui.py:745
+#: manpagesgui.py:720
 msgid "color"
 msgstr "couleur"
 
-#: manpagesgui.py:745
+#: manpagesgui.py:720
 msgid "default"
 msgstr "défaut"
 
-#: manpagesgui.py:746
+#: manpagesgui.py:721
 msgid "GUI manual pager"
 msgstr "Visionneur graphique de pages du manuel"
 
-#: manpagesgui.py:747
+#: manpagesgui.py:722
 msgid "man command"
 msgstr "commande man"
 
-#: manpagesgui.py:747
+#: manpagesgui.py:722
 msgid "command"
 msgstr "commande"
 
-#: manpagesgui.py:748
+#: manpagesgui.py:723
 msgid "manual pages directory"
 msgstr "répertoire des pages du manuel"
 
-#: manpagesgui.py:748
+#: manpagesgui.py:723
 msgid "directory"
 msgstr "répertoire"
 
-#: manpagesgui.py:749
+#: manpagesgui.py:724
 msgid "Do not display pages in local language"
 msgstr "Ne pas afficher les pages dans la langue locale"
 
-#: manpagesgui.py:750
+#: manpagesgui.py:725
 msgid "Disables other proposals pages"
 msgstr "Désactive les propositions d'autres pages"
 
-#: manpagesgui.py:751
+#: manpagesgui.py:726
 msgid "Number of random pages displayed"
 msgstr "Nombre de pages au hasard affichées"
 
-#: manpagesgui.py:752
+#: manpagesgui.py:727
+msgid "Disable window resizing"
+msgstr "Désactiver redimensionnement de la fenêrtre"
+
+#: manpagesgui.py:728
 msgid "Number of columns displayed"
 msgstr "Nombre de colonnes affichées"
 
-#: manpagesgui.py:753
+#: manpagesgui.py:729
 msgid "Number of rows displayed"
 msgstr "Nombre de lignes affichées"
 
-#: manpagesgui.py:754
+#: manpagesgui.py:730
 msgid "Disables email links"
 msgstr "Désactive les liens email"
 
-#: manpagesgui.py:755
+#: manpagesgui.py:731
 msgid "Disables URL links"
 msgstr "Désactive les liens URL"
 
-#: manpagesgui.py:756
+#: manpagesgui.py:732
 msgid "Use theme's colors"
 msgstr "Utilise les couleurs du thème"
 
-#: manpagesgui.py:757
+#: manpagesgui.py:733
 msgid "Text color"
 msgstr "Couleurs du texte"
 
-#: manpagesgui.py:758
+#: manpagesgui.py:734
 msgid "Background color"
 msgstr "Couleurs de fond"
 
-#: manpagesgui.py:759
+#: manpagesgui.py:735
 msgid "Section text color"
 msgstr "Couleurs du texte des sections"
 
-#: manpagesgui.py:760
+#: manpagesgui.py:736
 msgid "Section background color"
 msgstr "Couleurs de fond des sections"
 
-#: manpagesgui.py:761
+#: manpagesgui.py:737
 msgid "Link text color"
 msgstr "Couleurs du texte des liens"
 
-#: manpagesgui.py:762
+#: manpagesgui.py:738
 msgid "Link background color"
 msgstr "Couleurs de fond des liens"
 
-#: manpagesgui.py:763
+#: manpagesgui.py:739
 msgid "Bold text color"
 msgstr "Couleurs du texte gras"
 
-#: manpagesgui.py:764
+#: manpagesgui.py:740
 msgid "Bold background color"
 msgstr "Couleurs de fond gras"
 
-#: manpagesgui.py:765
+#: manpagesgui.py:741
 msgid "Italic text color"
 msgstr "Couleurs du texte italiques"
 
-#: manpagesgui.py:766
+#: manpagesgui.py:742
 msgid "Italic background color"
 msgstr "Couleurs de fond italique"
 
-#: manpagesgui.py:767
+#: manpagesgui.py:743
 msgid "Environment variable text color"
 msgstr "Couleurs du texte des variables d'environnement"
 
-#: manpagesgui.py:768
+#: manpagesgui.py:744
 msgid "Environment variable background color"
 msgstr "Couleurs de fond des variables d'environnement"
 
-#: manpagesgui.py:769
+#: manpagesgui.py:745
 msgid "Display version number and exit"
 msgstr "Affiche le numéro de version et quitte"
